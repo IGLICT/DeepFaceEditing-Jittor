@@ -52,10 +52,12 @@ images provide geometry:
 
   ```
   python test_model.py --geo ./images/geometry.png --appear ./images/geometry.png --output ./results/recon_result.png --geo_type image
+  
 
 #### Generate faces with geometry of image A and appearance of image B:
 
 images provide geometry:
+
 
   ```
   python test_model.py --geo ./images/geometry.png --appear ./images/appearance.png --output ./results/image_result.png --geo_type image
