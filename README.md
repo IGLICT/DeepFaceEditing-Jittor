@@ -43,7 +43,7 @@ Please download the pre-trained model [Google Drive]</a>, then put those under '
   python test_model.py --geo ./images/geometry.png --output ./results/sketch_gen.png --gen_sketch
   ```
 
-<div align="center"> <img src="./images/geometry.png" alt="geometry image" style="zoom:50%;" />
+ <img src="./images/geometry.png" alt="geometry image" style="zoom:50%;" />
     <img src="./images/sketch_gen.png" alt="geometry sketch" style="zoom:50%;" />
 
 ​                                                                      Geometry image                                 generate sketch 
@@ -63,8 +63,9 @@ sketches provide geometry:
   python test_model.py --geo ./results/sketch_gen.png --appear ./images/appearance.png --output ./results/sketch_result.png --geo_type sketch
   ```
 
-<div align="center"><img src="./images/appearance.png" alt="appearance image" style="zoom:50%;" /><img src="./images/sketch_result.png" alt="sketch result" style="zoom:50%;" /><img src="./images/image_result.png" alt="image result" style="zoom:50%;" />
+<img src="./images/appearance.png" alt="appearance image" style="zoom:50%;" /><img src="./images/sketch_result.png" alt="sketch result" style="zoom:50%;" /><img src="./images/image_result.png" alt="image result" style="zoom:50%;" />
 ​                                       appearance image                        sketch geometry result                      image geometry result
+
 
 ## Citation
 
