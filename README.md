@@ -45,8 +45,13 @@ Please download the pre-trained model [Google Drive]</a>, then put those under '
 
  <img src="./images/geometry.png" alt="geometry image" width="200px"  /><img src="./images/sketch_gen.png" alt="geometry sketch" width="200px" />
 
-​                                                                      Geometry image                                 generate sketch 
 
+#### Reconstruct faces of image A:
+
+images provide geometry:
+
+  ```
+  python test_model.py --geo ./images/geometry.png --appear ./images/geometry.png --output ./results/recon_result.png --geo_type image
 
 #### Generate faces with geometry of image A and appearance of image B:
 
@@ -61,10 +66,6 @@ sketches provide geometry:
   ```
   python test_model.py --geo ./results/sketch_gen.png --appear ./images/appearance.png --output ./results/sketch_result.png --geo_type sketch
   ```
-
-<img src="./images/appearance.png" alt="appearance image" width="200px" /><img src="./images/sketch_result.png" alt="sketch result" width="200px" /><img src="./images/image_result.png" alt="image result" width="200px"/>
-
-​                                       appearance image                        sketch geometry result                      image geometry result
 
 
 ## Citation
