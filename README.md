@@ -23,9 +23,9 @@ Recent facial image synthesis methods have been mainly based on conditional gene
 
 　- Jittor. More details in <a href="https://github.com/Jittor/Jittor" target="_blank">Jittor</a>
 
-  ```
-  pip install jittor
-  ```
+  - Pillow
+
+  - numpy
 
 　- Packages
 
