@@ -40,7 +40,7 @@ class Combine_Model(nn.Module):
             self.Gen_Part[key].load('./checkpoints/generator/generator_' + key + '.pkl')
 
         print("load the weight of global fuse")
-        self.netG.load('./checkpoints/global_fuse_25.pkl')
+        self.netG.load('./checkpoints/global_fuse.pkl')
 
     def inference(self, sketch, appear, geo_type):
         part_feature = {}
