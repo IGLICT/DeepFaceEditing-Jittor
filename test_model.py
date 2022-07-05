@@ -30,8 +30,8 @@ def save_img(image, path):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--geo", type=str, default = "./images/17115_sketch.png", help = "the path of geometry image")
-    parser.add_argument("--appear", type=str, default = "./images/69451.png", help = "the path of appearance image")
+    parser.add_argument("--geo", type=str, default = "./images/geometry.png", help = "the path of geometry image")
+    parser.add_argument("--appear", type=str, default = "./images/appearance.png", help = "the path of appearance image")
     parser.add_argument("--output", type=str, default = "./results/sketch_result.png", help = "the path of output image")
     parser.add_argument("--cuda", type=int, default = 1, help = "use cuda or cpu: 0 , cpu; 1 , gpu")
     parser.add_argument("--geo_type", type=str, default="sketch", help = "extract geometry from image or sketch: sketch / image")
@@ -43,6 +43,10 @@ if __name__ == '__main__':
     if args.gen_sketch:
         sketch_netG = networks.GlobalGenerator(input_nc = 3, output_nc = 3, 
                                         ngf = 32, n_downsampling = 4, n_blocks = 9)
+        print(sketch_netG)
+        Part_gen_dict = sketch_netG.state_dict()
+        for k,v in Part_gen_dict.items():
+            print(k)
         sketch_netG.load("./checkpoints/sketch_generator.pkl")
         geo_img = read_img(args.geo)
         with jt.no_grad():
@@ -57,7 +61,4 @@ if __name__ == '__main__':
         image_swap = model.inference(geo_img, appear_img, geo_type)
         save_img(image_swap, args.output)
 
-"python test_model.py --geo ./images/sketch_gen.png --appear ./images/appearance.png --output ./results/sketch_result.png --geo_type sketch"
-"python test_model.py --geo ./images/geometry.png --appear ./images/appearance.png --output ./results/image_result.png --geo_type image"
-"python test_model.py --geo ./images/geometry.png --output ./results/sketch_gen.png --gen_sketch"
 

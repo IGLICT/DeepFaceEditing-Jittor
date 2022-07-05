@@ -87,6 +87,104 @@ class ResnetBlock(nn.Module):
         out = x + self.conv_block(x)
         return out
 
+class EncoderBlock(nn.Module):
+    def __init__(self, channel_in, channel_out, kernel_size=7, padding=3, stride=4):
+        super(EncoderBlock, self).__init__()
+        # convolution to halve the dimensions
+        self.conv = nn.Conv2d(in_channels=channel_in, out_channels=channel_out, kernel_size=kernel_size, padding=padding, stride=stride)
+        self.bn = nn.BatchNorm2d(num_features=channel_out, momentum=0.9)
+        self.relu = nn.LeakyReLU(True)
+
+    def execute(self, ten, out=False,t = False):
+        # here we want to be able to take an intermediate output for reconstruction error
+        ten = self.conv(ten)
+        ten = self.bn(ten)
+        ten = self.relu(ten)
+        return ten
+
+class DecoderBlock(nn.Module):
+    def __init__(self, channel_in, channel_out, kernel_size=4, padding=1, stride=2, output_padding=0, norelu=False):
+        super(DecoderBlock, self).__init__()
+        # transpose convolution to double dimensions
+        layers_list = []
+        layers_list.append(nn.ConvTranspose(channel_in, channel_out, kernel_size=kernel_size, padding=padding, stride=stride, output_padding=output_padding))
+        layers_list.append(nn.BatchNorm2d(channel_out, momentum=0.9))
+        if norelu == False:
+            layers_list.append(nn.LeakyReLU(True))
+        self.conv = nn.Sequential(*layers_list)
+
+    def execute(self, ten):
+        ten = self.conv(ten)
+        return ten
+
+class DrawingEncoder(nn.Module):
+    def __init__(self, image_size, input_nc, norm_layer='bn', latent_dim=512):
+        assert(latent_dim >= 0)
+        super(DrawingEncoder, self).__init__()
+        latent_size = int(image_size/32)
+        longsize = 512*latent_size*latent_size
+
+        layers_list = []
+        layers_list.append(EncoderBlock(channel_in=input_nc, channel_out=32, kernel_size=4, padding=1, stride=2))
+        
+        dim_size = 32
+        for i in range(4):
+            layers_list.append(ResnetBlock(dim_size, padding_type='reflect', norm_type=norm_layer))  # 176 176  
+            layers_list.append(EncoderBlock(channel_in=dim_size, channel_out=dim_size*2, kernel_size=4, padding=1, stride=2))  # 88 88
+            dim_size *= 2
+
+        layers_list.append(ResnetBlock(512, padding_type='reflect', norm_type=norm_layer))  # 176 176
+        self.conv = nn.Sequential(*layers_list)
+
+        self.fc_mu = nn.Sequential(nn.Linear(in_features=longsize, out_features=latent_dim))
+        
+    def execute(self, x):
+        ten = self.conv(x)
+        ten = ten.view(ten.size()[0],-1)
+        mu = self.fc_mu(ten)
+        return mu
+
+class DrawingDecoder(nn.Module):
+    def __init__(self, image_size, output_nc, latent_dim=512):
+        super(DrawingDecoder, self).__init__()
+        latent_size = int(image_size/32)
+        self.latent_size = latent_size
+        longsize = 512*latent_size*latent_size
+
+        activation = nn.ReLU(True)
+        padding_type='reflect'
+        norm_layer='bn'
+        #norm_layer=nn.BatchNorm2d
+
+        self.fc = nn.Sequential(nn.Linear(in_features=latent_dim, out_features=longsize))
+        layers_list = []
+        layers_list.append(ResnetBlock(512, padding_type=padding_type, norm_type=norm_layer))
+
+        layers_list.append(DecoderBlock(channel_in=512, channel_out=256, kernel_size=4, padding=1, stride=2, output_padding=0))
+        layers_list.append(ResnetBlock(256, padding_type=padding_type, norm_type=norm_layer))
+
+        layers_list.append(DecoderBlock(channel_in=256, channel_out=256, kernel_size=4, padding=1, stride=2, output_padding=0))
+        layers_list.append(ResnetBlock(256, padding_type=padding_type, norm_type=norm_layer))
+
+        layers_list.append(DecoderBlock(channel_in=256, channel_out=128, kernel_size=4, padding=1, stride=2, output_padding=0))
+        layers_list.append(ResnetBlock(128, padding_type=padding_type, norm_type=norm_layer))
+
+        layers_list.append(DecoderBlock(channel_in=128, channel_out=64, kernel_size=4, padding=1, stride=2, output_padding=0))
+        layers_list.append(ResnetBlock(64, padding_type=padding_type, norm_type=norm_layer))
+
+        layers_list.append(DecoderBlock(channel_in=64, channel_out=64, kernel_size=4, padding=1, stride=2, output_padding=0))
+        layers_list.append(ResnetBlock(64, padding_type=padding_type, norm_type=norm_layer))
+
+        layers_list.append(nn.ReflectionPad2d(2))
+        layers_list.append(nn.Conv2d(64,output_nc,kernel_size=5,padding=0))
+        self.conv = nn.Sequential(*layers_list)
+
+    def execute(self, ten):
+        ten = self.fc(ten)
+        ten = ten.view(ten.size()[0],512, self.latent_size, self.latent_size)
+        ten = self.conv(ten)
+        return ten
+
 class GeometryEncoder(nn.Module):
     def __init__(self, input_nc, output_nc, ngf=64, n_downsampling=3, n_blocks=1, norm_layer=nn.InstanceNorm2d, 
                  padding_type='reflect'):
@@ -130,7 +228,7 @@ class StyleEncoder(nn.Module):
         return self.model(x)
 
 class Part_Generator(nn.Module):
-    def __init__(self, input_nc, output_nc, ngf=64, n_downsampling=3, n_blocks=9, norm_layer=nn.BatchNorm2d, 
+    def __init__(self, input_nc, output_nc, ngf=64, n_downsampling=3, n_blocks=9, norm_layer='adain', 
                  padding_type='reflect'):
         assert(n_blocks >= 0)
         super(Part_Generator, self).__init__()        
@@ -145,7 +243,10 @@ class Part_Generator(nn.Module):
         for i in range(n_downsampling):
             mult = 2**(n_downsampling - i)
             model += [nn.ConvTranspose(ngf * mult, int(ngf * mult / 2), 3, stride=2, padding=1, output_padding=1)]
-            model += [AdaptiveInstanceNorm2d(int(ngf * mult / 2))]
+            if norm_layer == 'adain':
+                model += [AdaptiveInstanceNorm2d(int(ngf * mult / 2))]
+            else:
+                model += [nn.InstanceNorm2d(int(ngf * mult / 2))]
             model += [activation]
         model += [nn.ReflectionPad2d(3), nn.Conv(ngf, output_nc, 7, padding=0), nn.Tanh()]        
         self.model = nn.Sequential(*model)
@@ -187,11 +288,16 @@ class Part_Generator(nn.Module):
                 return image_content
 
 class GlobalGenerator(nn.Module):
-    def __init__(self, input_nc, output_nc, ngf=64, n_downsampling=3, n_blocks=9, norm_layer=nn.InstanceNorm2d, 
+    def __init__(self, input_nc, output_nc, ngf=64, n_downsampling=3, n_blocks=9, norm='in', 
                  padding_type='reflect'):
         assert(n_blocks >= 0)
         super(GlobalGenerator, self).__init__()        
         activation = nn.ReLU()        
+
+        if norm == 'in':
+            norm_layer = nn.InstanceNorm2d
+        else:
+            norm_layer = nn.BatchNorm2d
 
         model = [nn.ReflectionPad2d(3), nn.Conv(input_nc, ngf, 7, padding=0), norm_layer(ngf), activation]
         ### downsample
@@ -203,7 +309,7 @@ class GlobalGenerator(nn.Module):
         ### resnet blocks
         mult = 2**n_downsampling
         for i in range(n_blocks):
-            model += [ResnetBlock(ngf * mult, norm_type = 'in', padding_type=padding_type)]
+            model += [ResnetBlock(ngf * mult, norm_type = norm, padding_type=padding_type)]
         
         ### upsample         
         for i in range(n_downsampling):
@@ -215,3 +321,4 @@ class GlobalGenerator(nn.Module):
             
     def execute(self, input):
         return self.model(input) 
+
