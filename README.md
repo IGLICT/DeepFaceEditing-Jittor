@@ -35,7 +35,7 @@ Recent facial image synthesis methods have been mainly based on conditional gene
 
 ## How to use
 
-Please download the pre-trained model <a href="https://drive.google.com/file/d/1UoqrCAOyHZeeEoZVl9I-pK_sQlVU4__G/view?usp=sharing
+Please download the pre-trained model <a href="https://drive.google.com/file/d/1kny5MqZ9m8mo8ln65a5ycswVIkxemZjx/view?usp=sharing
 " target="_blank">[Google Drive]</a>, then put those under 'checkpoints'.
 
 #### Extract sketches from real images:
@@ -75,6 +75,8 @@ Coarse sketches provide geometry (with manifold projection):
   ```
   python test_model_Projection.py --geo ./images/CoarseSketch.jpg --appear ./images/29042.jpg --output ./results/sketch_to_face.png --gender 0
   ```
+
+ <img src="./images/CoarseSketch.jpg" alt="geometry image" width="200px"  /> <img src="./images/CoarseSketch2face.png" alt="geometry sketch" width="200px" />
 
 ## Citation
 
